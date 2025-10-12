@@ -1,1 +1,1 @@
-# funcpro-mini-project
+# Warehouse Inventory Manager (FuncPro Simulation in Haskell)
