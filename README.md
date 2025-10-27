@@ -1,1 +1,1 @@
-# Warehouse Inventory Manager (FuncPro Simulation in Haskell)
+# Inventory Management System: Functional Style
