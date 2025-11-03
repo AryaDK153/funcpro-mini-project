@@ -30,7 +30,6 @@ data Transaction = Transaction {
 
 
 data Stock = Stock {
-    stockItemID :: Int,
     stockItem :: Item,
     stockShelfID :: Int
 } deriving (Show, Eq)
