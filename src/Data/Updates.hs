@@ -4,7 +4,7 @@ module Data.Updates (
 ) where
 
 
-import Data.Types.Item
+import Data.Types
 
 updateQty :: Int -> Item -> Item
 updateQty newQty item = item { itemQty = itemQty item + newQty }
