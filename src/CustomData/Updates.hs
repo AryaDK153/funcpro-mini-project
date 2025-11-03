@@ -1,10 +1,10 @@
 -- mainly focuses on list comprehensions
-module Data.Updates (
+module CustomData.Updates (
     updateQty
 ) where
 
 
-import Data.Types
+import CustomData.Types
 
 updateQty :: Int -> Item -> Item
 updateQty newQty item = item { itemQty = itemQty item + newQty }

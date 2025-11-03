@@ -1,4 +1,4 @@
-module Data.Types (
+module CustomData.Types (
     Item(..),
     Transaction(..),
     Stock(..)

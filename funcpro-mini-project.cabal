@@ -18,8 +18,8 @@ extra-source-files:  README.md
 executable funcpro-mini-project
   hs-source-dirs:      src
   main-is:             Main.hs
-  other-modules:       Data.Types
-                       Data.Updates
+  other-modules:       CustomData.Types
+                       CustomData.Updates
                        IO.CSVHandler
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
