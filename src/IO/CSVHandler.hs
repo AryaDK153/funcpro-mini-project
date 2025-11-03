@@ -2,15 +2,15 @@
 module IO.CSVHandler (
     readStockCSV,
     writeStockCSV,
-    readTransCSV,
-    writeTransCSV
+    -- readTransCSV,
+    -- writeTransCSV
 ) where
 
-import Data.Types
-import Data.List
-import System.IO
+import CustomData.Types
+-- import Data.List
+-- import System.IO
+import Data.Maybe (mapMaybe)
 
--- simplistic CSV split (no escaping handling)
 splitCSV :: String -> [String]
 splitCSV line = case break (== ',') line of
     (val, ',' : rest) -> val : splitCSV rest
@@ -19,12 +19,20 @@ splitCSV line = case break (== ',') line of
 readStockCSV :: FilePath -> IO [Stock]
 readStockCSV path = do
     content <- readFile path
-    let ls = drop 1 (lines content) -- skip header
-    return [ Stock (read sid) (read qty)
-           | l <- ls, let [sid, _, qty] = splitCSV l ]
+    let ls = drop 1 (lines content)
+    let parseLine l = case splitCSV l of
+            [sid, name, qty, shelf] ->
+                Just (Stock (Item (read sid) name (read qty)) (read shelf))
+            _ -> Nothing
+    return (mapMaybe parseLine ls)
 
 writeStockCSV :: FilePath -> [Stock] -> IO ()
 writeStockCSV path stocks = do
-    let header = "id,name,qty\n"
-        rows = [ show (stockItemID s) ++ ",," ++ show (stockQty s) | s <- stocks ]
-    writeFile path (header ++ unlines rows)
+    let header = "ID,Name,Qty,ShelfID"
+    let rows = map (\(Stock item shelf) ->
+                      show (itemID item) ++ "," ++
+                      itemName item ++ "," ++
+                      show (itemQty item) ++ "," ++
+                      show shelf) stocks
+    writeFile path (unlines (header : rows))
+    putStrLn "Stock data written successfully!"

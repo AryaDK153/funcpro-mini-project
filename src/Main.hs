@@ -2,7 +2,7 @@ module Main (main) where
   
 import CustomData.Types
 import CustomData.Updates
--- import IO.CSVHandler
+import IO.CSVHandler
 
 main :: IO ()
 main = do
@@ -18,3 +18,9 @@ main = do
   print updatedItem2
   print (updateQty 20 updatedItem2)
   print updatedItem2
+
+  -- CSV Handling Test
+  let stockList = [Stock item1 101, Stock updatedItem 102]
+  writeStockCSV "stock_output.csv" stockList
+  stocksFromFile <- readStockCSV "stock_output.csv"
+  print stocksFromFile
