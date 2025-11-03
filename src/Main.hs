@@ -21,6 +21,6 @@ main = do
 
   -- CSV Handling Test
   let stockList = [Stock item1 101, Stock updatedItem 102]
-  writeStockCSV "stock_output.csv" stockList
-  stocksFromFile <- readStockCSV "stock_output.csv"
+  writeStockCSV "stockDB.csv" stockList
+  stocksFromFile <- readStockCSV "stockDB.csv"
   print stocksFromFile
