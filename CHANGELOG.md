@@ -9,3 +9,7 @@ and this project adheres to the
 ## Unreleased
 
 ## 0.1.0.0 - YYYY-MM-DD
+
+Note:
+ShelfID: [C | D (cold/dry)] [A..Z (shelf)], [1.. (level, 2 digits)], [0.. (column, 2 digits)]
+> example: CB0204

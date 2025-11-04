@@ -1,13 +1,13 @@
 module CustomData.Types (
     Item(..),
+    TransDirection(..),
     Transaction(..),
     Stock(..)
 ) where
 
 data Item = Item {
     itemID :: Int,
-    itemName :: String,
-    itemQty :: Int
+    itemName :: String
 } deriving (Show, Eq)
 
 
@@ -25,11 +25,12 @@ data Transaction = Transaction {
     transHH :: Int,
     transMN :: Int,
     transSS :: Int,
-    transShelfID :: Int
+    transShelfID :: [String]
 } deriving (Show, Eq)
 
 
 data Stock = Stock {
     stockItem :: Item,
-    stockShelfID :: Int
+    stockQty :: Int,
+    stockShelfID :: [String]
 } deriving (Show, Eq)

@@ -1,5 +1,6 @@
 module Main (main) where
   
+import CustomData.FileNames
 import CustomData.Types
 import CustomData.Updates
 import IO.CSVHandler
@@ -8,19 +9,42 @@ main :: IO ()
 main = do
 
   -- Data Types Test
-  let item1 = Item 1 "Apple" 10
+  let item1 = Item 1 "Apple"
   print item1
-  
-  -- mutability Test
-  let updatedItem = updateQty 5 item1
-  print updatedItem
-  let updatedItem2 = updateQty (-3) updatedItem
-  print updatedItem2
-  print (updateQty 20 updatedItem2)
-  print updatedItem2
+
+  let itemList = [item1, Item 2 "Banana"]
+  print itemList
+
+  let stock1 = Stock item1 100 ["CA0101", "DA0202"]
+  print stock1
+
+  let stockList = [stock1, Stock (Item 2 "Banana") 50 ["CA0303"]]
+  print stockList
+
+  let transaction1 = Transaction 1 item1 20 IN 15 8 2023 14 30 0 ["CA0101"]
+  print transaction1
+
+  let transactionList = [transaction1, Transaction 2 (Item 2 "Banana") 10 OUT 16 8 2023 10 0 0 ["DA0202"]]
+  print transactionList
+
 
   -- CSV Handling Test
-  let stockList = [Stock item1 101, Stock updatedItem 102]
-  writeStockCSV "stockDB.csv" stockList
-  stocksFromFile <- readStockCSV "stockDB.csv"
+  writeItemCSV itemDB itemList
+  itemsFromFile <- readItemCSV itemDB
+  print itemsFromFile
+
+  writeStockCSV stockDB stockList
+  stocksFromFile <- readStockCSV stockDB
   print stocksFromFile
+
+  writeTransCSV transDB transactionList
+  transFromFile <- readTransCSV transDB
+  print transFromFile
+
+  
+  -- Update Test
+  item2 <- newItem "Banana"
+  print item2
+
+  item3 <- newItem "Orange"
+  print item3
