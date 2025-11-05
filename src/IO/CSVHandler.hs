@@ -8,6 +8,9 @@ module IO.CSVHandler (
     writeTransCSV
 ) where
 
+import Control.DeepSeq (force)
+import Control.Exception (evaluate)
+
 import CustomData.Types
 import Data.Maybe (mapMaybe)
 import Data.List (intercalate)
@@ -27,16 +30,22 @@ splitShelves s = case break (== ';') s of
 joinShelves :: [String] -> String
 joinShelves = intercalate ";"
 
+readForced :: FilePath -> IO String
+readForced path = do
+    content <- readFile path
+    _ <- evaluate (force content)
+    return content
+
 -----------------------------------
 -- ITEM
 -----------------------------------
 
 readItemCSV :: FilePath -> IO [Item]
 readItemCSV path = do
-    content <- readFile path
+    content <- readForced path
     let ls = drop 1 (lines content)
     let parseLine l = case splitCSV l of
-            [itemID, name] -> Just (Item (read itemID) name)
+            [iid, name] -> Just (Item (read iid) name)
             _              -> Nothing
     return (mapMaybe parseLine ls)
 
@@ -54,13 +63,13 @@ writeItemCSV path items = do
 
 readStockCSV :: FilePath -> IO [Stock]
 readStockCSV path = do
-    content <- readFile path
+    content <- readForced path
     let ls = drop 1 (lines content)
     let parseLine l = case splitCSV l of
-            [itemID, name, qty, shelfStr] ->
-                Just (Stock (Item (read itemID) name)
+            [iid, name, qty, sid] ->
+                Just (Stock (Item (read iid) name)
                             (read qty)
-                            (splitShelves shelfStr))
+                            (splitShelves sid))
             _ -> Nothing
     return (mapMaybe parseLine ls)
 
@@ -82,12 +91,12 @@ writeStockCSV path stocks = do
 
 readTransCSV :: FilePath -> IO [Transaction]
 readTransCSV path = do
-    content <- readFile path
+    content <- readForced path
     let ls = drop 1 (lines content)
     let parseLine l = case splitCSV l of
-            [tid, sid, name, qty, dir, dd, mm, yyyy, hh, mn, ss, shelvesStr] ->
+            [tid, iid, name, qty, dir, dd, mm, yyyy, hh, mn, ss, sid] ->
                 Just (Transaction (read tid)
-                                  (Item (read sid) name)
+                                  (Item (read iid) name)
                                   (read qty)
                                   (read dir)
                                   (read dd)
@@ -96,7 +105,7 @@ readTransCSV path = do
                                   (read hh)
                                   (read mn)
                                   (read ss)
-                                  (splitShelves shelvesStr))
+                                  (splitShelves sid))
             _ -> Nothing
     return (mapMaybe parseLine ls)
 
