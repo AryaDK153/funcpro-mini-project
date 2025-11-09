@@ -1,3 +1,0 @@
-TransID,ItemID,Name,Qty,Direction,DD,MM,YYYY,HH,MN,SS,ShelfIDs
-1,1,Apple,20,IN,15,8,2023,14,30,0,CA0101
-2,2,Banana,10,OUT,16,8,2023,10,0,0,DA0202
