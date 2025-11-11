@@ -1,10 +1,12 @@
 module CustomData.Updates (
-    newItemHandler
+    newItemHandler,
+    newStockHandler,
+    stockUpdate,
 ) where
 
 import CustomData.FileNames
 import CustomData.Types
-import Data.List (find)
+import Data.List (find, partition)
 import IO.CSVHandler
 
 -- new Item rule: newName must be unique, if exist, return existing Item
@@ -16,4 +18,45 @@ newItemHandler existingItems newName = case find (\it -> itemName it == newName)
             newItem = Item newID newName
         in (existingItems ++ [newItem], newItem)
 
--- new Transaction rule: updates stock based on transaction direction, invalid if insufficient stock
+-- new Stock rule: if Item exists, return existing Stock, else create new Stock with 0 qty and empty shelf list
+newStockHandler :: [Stock] -> Item -> ([Stock], Stock)
+newStockHandler existingStocks item = case find (\st -> stockItem st == item) existingStocks of
+    Just existing -> (existingStocks, existing)
+    Nothing ->
+        let newStock = Stock item 0 []
+        in (existingStocks ++ [newStock], newStock)
+
+stockQtyUpdate :: Stock -> TransDirection -> Int -> Maybe Stock
+stockQtyUpdate stock IN qty = Just stock { stockQty = stockQty stock + qty }
+stockQtyUpdate stock OUT qty
+  | stockQty stock >= qty = Just stock { stockQty = stockQty stock - qty }
+  | otherwise = Nothing
+stockQtyUpdate stock _ _ = Just stock -- wildcard case, in case it happens
+
+-----------------------------------
+-- FUTURE REVAMP IDEA: STOCK DB - {ID, ItemName, Cap, Qty}
+-- For now we let it be unlimited capacity but still unique for each Item
+-----------------------------------
+stockShelfUpdate :: [Stock] -> Stock -> [String] -> ([Stock], [String])
+stockShelfUpdate stocks targetStock newShelves =
+    let
+        -- Separate free shelves from shelves occupied by other items
+        occupiedShelves = concatMap stockShelfID (filter (\s -> stockItem s /= stockItem targetStock) stocks)
+        (taken, free) = partition (`elem` occupiedShelves) newShelves
+
+        updatedStock = targetStock { stockShelfID = stockShelfID targetStock ++ free }
+        updatedStocks = map (\s -> if stockItem s == stockItem targetStock then updatedStock else s) stocks
+    in
+        (updatedStocks, taken)
+
+stockUpdate :: [Stock] -> Transaction -> Maybe [Stock]
+stockUpdate stocks trans = case find (\st -> stockItem st == transItem trans) stocks of
+    Nothing -> Nothing -- Stock for the item does not exist
+    Just s  -> case stockQtyUpdate s (transDirection trans) (transQty trans) of
+        Nothing -> Nothing -- Insufficient stock for OUT transaction
+        Just s' ->
+            let (updatedStocks, _) = stockShelfUpdate stocks s' (transShelfID trans)
+            in Just updatedStocks
+
+-- new Transaction rule: validate values (stock exist, date, time), updates stock qty based on transaction direction and add shelf id if not yet in, invalid if insufficient stock on OUT transaction
+-- newTransHandler :: [Transaction] -> [Stock] -> (Item,Int,TransDirection,(Int,Int,Int),(Int,Int,Int),[String]) -> ([Stock], [Transaction])

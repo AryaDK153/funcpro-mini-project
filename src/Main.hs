@@ -33,21 +33,44 @@ main = do
   rawStockCSV <- readCSV stockDB
   rawTransCSV <- readCSV transDB
 
-  let itemList = parseItemCSV rawItemCSV
-  print itemList
+  let itemListLoaded = parseItemCSV rawItemCSV
+  print itemListLoaded
 
-  let stockList = parseStockCSV rawStockCSV
-  print stockList
+  let stockListLoaded = parseStockCSV rawStockCSV
+  print stockListLoaded
 
-  let transList = parseTransCSV rawTransCSV
-  print transList
+  let transListLoaded = parseTransCSV rawTransCSV
+  print transListLoaded
 
   -- Custom Data Updates Test
-  let (updatedItems, newItem) = newItemHandler itemList "Orange"
+  let (updatedItems, newItem) = newItemHandler itemListLoaded "Soursop"
   putStrLn $ "Added/Found Item: " ++ show newItem
   putStrLn $ "Updated Item List: " ++ show updatedItems
 
   writeItemCSV updatedItems
-  rawItemCSV <- readCSV itemDB
-  let itemList = parseItemCSV rawItemCSV
-  print itemList
+  rawItemCSV2 <- readCSV itemDB
+  let itemListUpdated = parseItemCSV rawItemCSV2
+  print itemListUpdated
+
+  let (stockListAfter1, s1) = newStockHandler stockListLoaded (Item 1 "Apple")
+  putStrLn $ "Reused Stock: " ++ show s1
+  putStrLn $ "Stocks (should be same count): " ++ show stockListAfter1
+
+  let (stockListAfter2, s2) = newStockHandler stockListLoaded (Item 99 "Durian")
+  putStrLn $ "New Stock: " ++ show s2
+  putStrLn $ "Stocks (should +1): " ++ show stockListAfter2
+
+  let transIN = Transaction 3 (Item 1 "Apple") 25 IN 20 10 2023 12 0 0 ["CA0102"]
+  let transOUT = Transaction 4 (Item 1 "Apple") 10 OUT 20 10 2023 13 0 0 ["CA0102"]
+
+  -- sneakpeek transHandler logic via stockUpdate
+  let maybeStocksIN = stockUpdate stockListAfter2 transIN
+  let maybeStocksOUT = case maybeStocksIN of
+        Nothing -> Nothing
+        Just s  -> stockUpdate s transOUT
+
+  case maybeStocksOUT of
+    Just final -> putStrLn $ "Final stocks: " ++ show final
+    Nothing    -> putStrLn "Transaction failed (invalid stock operation)"
+
+
