@@ -2,6 +2,7 @@ module CustomData.Updates (
     newItemHandler,
     newStockHandler,
     stockUpdate,
+    newTransHandler
 ) where
 
 import CustomData.FileNames
@@ -31,7 +32,6 @@ stockQtyUpdate stock IN qty = Just stock { stockQty = stockQty stock + qty }
 stockQtyUpdate stock OUT qty
   | stockQty stock >= qty = Just stock { stockQty = stockQty stock - qty }
   | otherwise = Nothing
-stockQtyUpdate stock _ _ = Just stock -- wildcard case, in case it happens
 
 -----------------------------------
 -- FUTURE REVAMP IDEA: STOCK DB - {ID, ItemName, Cap, Qty}
@@ -59,4 +59,14 @@ stockUpdate stocks trans = case find (\st -> stockItem st == transItem trans) st
             in Just updatedStocks
 
 -- new Transaction rule: validate values (stock exist, date, time), updates stock qty based on transaction direction and add shelf id if not yet in, invalid if insufficient stock on OUT transaction
--- newTransHandler :: [Transaction] -> [Stock] -> (Item,Int,TransDirection,(Int,Int,Int),(Int,Int,Int),[String]) -> ([Stock], [Transaction])
+newTransHandler ::
+  [Transaction] ->
+  [Stock] ->
+  (Item, Int, TransDirection, (Int, Int, Int), (Int, Int, Int), [String]) ->
+  Maybe ([Stock], [Transaction])
+newTransHandler existingTrans stocks (item, qty, direction, (dd, mm, yyyy), (hh, mn, ss), shelfIDs) =
+  let newID = if null existingTrans then 1 else maximum (map transID existingTrans) + 1
+      newTrans = Transaction newID item qty direction dd mm yyyy hh mn ss shelfIDs
+  in case stockUpdate stocks newTrans of
+       Nothing -> Nothing
+       Just updatedStocks -> Just (updatedStocks, existingTrans ++ [newTrans])
