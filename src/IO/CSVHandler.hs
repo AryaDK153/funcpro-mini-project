@@ -1,16 +1,18 @@
 -- focuses on handling csv creation, parsing, and manipulation
 module IO.CSVHandler (
-    readItemCSV,
+    readCSV,
+    parseItemCSV,
+    parseStockCSV,
+    parseTransCSV,
     writeItemCSV,
-    readStockCSV,
     writeStockCSV,
-    readTransCSV,
     writeTransCSV
 ) where
 
 import Control.DeepSeq (force)
 import Control.Exception (evaluate)
 
+import CustomData.FileNames
 import CustomData.Types
 import Data.Maybe (mapMaybe)
 import Data.List (intercalate)
@@ -30,100 +32,95 @@ splitShelves s = case break (== ';') s of
 joinShelves :: [String] -> String
 joinShelves = intercalate ";"
 
-readForced :: FilePath -> IO String
-readForced path = do
-    content <- readFile path
-    _ <- evaluate (force content)
-    return content
+-----------------------------------
+-- REVAMP for CSV-to-List Parsing
+-----------------------------------
+readCSV :: FilePath -> IO String
+readCSV path = do
+    ioContent <- readFile path
+    _ <- evaluate (force ioContent)
+    return ioContent
+
+parse :: (String -> Maybe a) -> String -> [a]
+parse lineParser content = mapMaybe lineParser (drop 1 (lines content))
+
+itemLineParser :: String -> Maybe Item
+itemLineParser l = case splitCSV l of
+    [iid, name] -> Just (Item (read iid) name)
+    _ -> Nothing
+
+stockLineParser :: String -> Maybe Stock
+stockLineParser l = case splitCSV l of
+    [iid, name, qty, sid] -> Just (Stock (Item (read iid) name)
+                                         (read qty)
+                                         (splitShelves sid))
+    _ -> Nothing
+
+transLineParser :: String -> Maybe Transaction
+transLineParser l = case splitCSV l of
+    [tid, iid, name, qty, dir, dd, mm, yyyy, hh, mn, ss, sid] ->
+        Just (Transaction (read tid)
+                          (Item (read iid) name)
+                          (read qty)
+                          (read dir)
+                          (read dd)
+                          (read mm)
+                          (read yyyy)
+                          (read hh)
+                          (read mn)
+                          (read ss)
+                          (splitShelves sid))
+    _ -> Nothing
+
+parseItemCSV :: String -> [Item]
+parseItemCSV = parse itemLineParser
+
+parseStockCSV :: String -> [Stock]
+parseStockCSV = parse stockLineParser
+
+parseTransCSV :: String -> [Transaction]
+parseTransCSV = parse transLineParser
 
 -----------------------------------
--- ITEM
+-- REVAMP for List-to-CSV Writing
 -----------------------------------
 
-readItemCSV :: FilePath -> IO [Item]
-readItemCSV path = do
-    content <- readForced path
-    let ls = drop 1 (lines content)
-    let parseLine l = case splitCSV l of
-            [iid, name] -> Just (Item (read iid) name)
-            _              -> Nothing
-    return (mapMaybe parseLine ls)
+itemComposer :: Item -> String
+itemComposer (Item iid name) =
+    show iid ++ "," ++ name
 
-writeItemCSV :: FilePath -> [Item] -> IO ()
-writeItemCSV path items = do
-    let header = "ID,Name"
-    let rows = map (\(Item iid name) ->
-                      show iid ++ "," ++ name) items
-    writeFile path (unlines (header : rows))
-    putStrLn "Item data written successfully!"
+stockComposer :: Stock -> String
+stockComposer (Stock item qty shelves) =
+    show (itemID item) ++ "," ++
+    itemName item ++ "," ++
+    show qty ++ "," ++
+    joinShelves shelves
 
------------------------------------
--- STOCK
------------------------------------
+transComposer :: Transaction -> String
+transComposer t =
+    show (transID t) ++ "," ++
+    show (itemID (transItem t)) ++ "," ++
+    itemName (transItem t) ++ "," ++
+    show (transQty t) ++ "," ++
+    show (transDirection t) ++ "," ++
+    show (transDD t) ++ "," ++
+    show (transMM t) ++ "," ++
+    show (transYYYY t) ++ "," ++
+    show (transHH t) ++ "," ++
+    show (transMN t) ++ "," ++
+    show (transSS t) ++ "," ++
+    joinShelves (transShelfID t)
 
-readStockCSV :: FilePath -> IO [Stock]
-readStockCSV path = do
-    content <- readForced path
-    let ls = drop 1 (lines content)
-    let parseLine l = case splitCSV l of
-            [iid, name, qty, sid] ->
-                Just (Stock (Item (read iid) name)
-                            (read qty)
-                            (splitShelves sid))
-            _ -> Nothing
-    return (mapMaybe parseLine ls)
+writeCSV :: (a -> String) -> FilePath -> String -> [a] -> IO ()
+writeCSV composer path header content = do
+    writeFile path (unlines (header : map composer content))
+    putStrLn "Data saved successfully!"
 
-writeStockCSV :: FilePath -> [Stock] -> IO ()
-writeStockCSV path stocks = do
-    let header = "ID,Name,Qty,ShelfIDs"
-    let rows = map (\(Stock item qty shelves) ->
-                      show (itemID item) ++ "," ++
-                      itemName item ++ "," ++
-                      show qty ++ "," ++
-                      joinShelves shelves) stocks
-    writeFile path (unlines (header : rows))
-    putStrLn "Stock data written successfully!"
+writeItemCSV :: [Item] -> IO ()
+writeItemCSV = writeCSV itemComposer itemDB "ID,Name"
 
+writeStockCSV :: [Stock] -> IO ()
+writeStockCSV = writeCSV stockComposer stockDB "ID,Name,Qty,ShelfIDs"
 
------------------------------------
--- TRANSACTIONS
------------------------------------
-
-readTransCSV :: FilePath -> IO [Transaction]
-readTransCSV path = do
-    content <- readForced path
-    let ls = drop 1 (lines content)
-    let parseLine l = case splitCSV l of
-            [tid, iid, name, qty, dir, dd, mm, yyyy, hh, mn, ss, sid] ->
-                Just (Transaction (read tid)
-                                  (Item (read iid) name)
-                                  (read qty)
-                                  (read dir)
-                                  (read dd)
-                                  (read mm)
-                                  (read yyyy)
-                                  (read hh)
-                                  (read mn)
-                                  (read ss)
-                                  (splitShelves sid))
-            _ -> Nothing
-    return (mapMaybe parseLine ls)
-
-writeTransCSV :: FilePath -> [Transaction] -> IO ()
-writeTransCSV path trans = do
-    let header = "TransID,ItemID,Name,Qty,Direction,DD,MM,YYYY,HH,MN,SS,ShelfIDs"
-    let rows = map (\t ->
-                      show (transID t) ++ "," ++
-                      show (itemID (transItem t)) ++ "," ++
-                      itemName (transItem t) ++ "," ++
-                      show (transQty t) ++ "," ++
-                      show (transDirection t) ++ "," ++
-                      show (transDD t) ++ "," ++
-                      show (transMM t) ++ "," ++
-                      show (transYYYY t) ++ "," ++
-                      show (transHH t) ++ "," ++
-                      show (transMN t) ++ "," ++
-                      show (transSS t) ++ "," ++
-                      joinShelves (transShelfID t)) trans
-    writeFile path (unlines (header : rows))
-    putStrLn "Transaction data written successfully!"
+writeTransCSV :: [Transaction] -> IO ()
+writeTransCSV = writeCSV transComposer transDB "TransID,ItemID,Name,Qty,Direction,DD,MM,YYYY,HH,MN,SS,ShelfIDs"

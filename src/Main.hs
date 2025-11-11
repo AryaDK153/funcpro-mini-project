@@ -29,22 +29,25 @@ main = do
 
 
   -- CSV Handling Test
-  writeItemCSV itemDB itemList
-  itemsFromFile <- readItemCSV itemDB
-  print itemsFromFile
+  rawItemCSV <- readCSV itemDB
+  rawStockCSV <- readCSV stockDB
+  rawTransCSV <- readCSV transDB
 
-  writeStockCSV stockDB stockList
-  stocksFromFile <- readStockCSV stockDB
-  print stocksFromFile
+  let itemList = parseItemCSV rawItemCSV
+  print itemList
 
-  writeTransCSV transDB transactionList
-  transFromFile <- readTransCSV transDB
-  print transFromFile
+  let stockList = parseStockCSV rawStockCSV
+  print stockList
 
-  
-  -- Update Test
-  item2 <- newItem "Banana"
-  print item2
+  let transList = parseTransCSV rawTransCSV
+  print transList
 
-  item3 <- newItem "Orange"
-  print item3
+  -- Custom Data Updates Test
+  let (updatedItems, newItem) = newItemHandler itemList "Orange"
+  putStrLn $ "Added/Found Item: " ++ show newItem
+  putStrLn $ "Updated Item List: " ++ show updatedItems
+
+  writeItemCSV updatedItems
+  rawItemCSV <- readCSV itemDB
+  let itemList = parseItemCSV rawItemCSV
+  print itemList
