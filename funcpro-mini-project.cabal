@@ -24,7 +24,7 @@ executable funcpro-mini-project
                        IO.CSVHandler
                        Tests.CSVHandlerTest
                        Tests.CustomDataTest
-                       Tests.UpdatesTest
+                       Tests.UpdateTest
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5,
                        deepseq,
