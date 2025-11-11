@@ -24,7 +24,8 @@ executable funcpro-mini-project
                        IO.CSVHandler
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5,
-                       deepseq
+                       deepseq,
+                       time
   ghc-options:         -Wall
                        -Wcompat
                        -Widentities
