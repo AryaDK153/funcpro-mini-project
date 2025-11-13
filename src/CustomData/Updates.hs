@@ -44,14 +44,27 @@ stockShelfUpdate stocks targetStock newShelves =
         occupiedShelves = concatMap stockShelfID (filter (\s -> stockItem s /= stockItem targetStock) stocks)
         (taken, free) = partition (`elem` occupiedShelves) newShelves
 
-        updatedStock = targetStock { stockShelfID = stockShelfID targetStock ++ free }
+        currentStockShelves = stockShelfID targetStock
+        -- Only add shelves that are not already in the stock's shelf list
+        freeToAdd = filter (`notElem` currentStockShelves) free
+
+        updatedStock = targetStock { stockShelfID = stockShelfID targetStock ++ freeToAdd }
         updatedStocks = map (\s -> if stockItem s == stockItem targetStock then updatedStock else s) stocks
     in
         (updatedStocks, taken)
 
 stockUpdate :: [Stock] -> Transaction -> Maybe [Stock]
 stockUpdate stocks trans = case find (\st -> stockItem st == transItem trans) stocks of
-    Nothing -> Nothing -- Stock for the item does not exist
+    Nothing -> -- No stock found
+        case transDirection trans of
+            IN ->
+                let newStock = Stock
+                        { stockItem = transItem trans
+                        , stockQty = transQty trans
+                        , stockShelfID = transShelfID trans
+                        }
+                in Just (stocks ++ [newStock])
+            OUT -> Nothing -- can't remove what doesn’t exist!
     Just s  -> case stockQtyUpdate s (transDirection trans) (transQty trans) of
         Nothing -> Nothing -- Insufficient stock for OUT transaction
         Just s' ->
@@ -60,13 +73,13 @@ stockUpdate stocks trans = case find (\st -> stockItem st == transItem trans) st
 
 -- new Transaction rule: validate values (stock exist, date, time), updates stock qty based on transaction direction and add shelf id if not yet in, invalid if insufficient stock on OUT transaction
 newTransHandler ::
-  [Transaction] ->
-  [Stock] ->
+  ([Item], [Stock], [Transaction]) ->
   (Item, Int, TransDirection, (Int, Int, Int), (Int, Int, Int), [String]) ->
-  Maybe ([Stock], [Transaction])
-newTransHandler existingTrans stocks (item, qty, direction, (dd, mm, yyyy), (hh, mn, ss), shelfIDs) =
-  let newID = if null existingTrans then 1 else maximum (map transID existingTrans) + 1
-      newTrans = Transaction newID item qty direction dd mm yyyy hh mn ss shelfIDs
-  in case stockUpdate stocks newTrans of
+  Maybe ([Item], [Stock], [Transaction])
+newTransHandler (existingItems, existingStocks, existingTrans) (item, qty, direction, (dd, mm, yyyy), (hh, mn, ss), shelfIDs) =
+  let (validItems, validItem) = newItemHandler existingItems (itemName item)
+      newID = if null existingTrans then 1 else maximum (map transID existingTrans) + 1
+      newTrans = Transaction newID validItem qty direction dd mm yyyy hh mn ss shelfIDs
+  in case stockUpdate existingStocks newTrans of
        Nothing -> Nothing
-       Just updatedStocks -> Just (updatedStocks, existingTrans ++ [newTrans])
+       Just updatedStocks -> Just (validItems, updatedStocks, existingTrans ++ [newTrans])
