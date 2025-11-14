@@ -54,21 +54,12 @@ stockShelfUpdate stocks targetStock newShelves =
         (updatedStocks, taken)
 
 stockUpdate :: [Stock] -> Transaction -> Maybe [Stock]
-stockUpdate stocks trans = case find (\st -> stockItem st == transItem trans) stocks of
-    Nothing -> -- No stock found
-        case transDirection trans of
-            IN ->
-                let newStock = Stock
-                        { stockItem = transItem trans
-                        , stockQty = transQty trans
-                        , stockShelfID = transShelfID trans
-                        }
-                in Just (stocks ++ [newStock])
-            OUT -> Nothing -- can't remove what doesn’t exist!
-    Just s  -> case stockQtyUpdate s (transDirection trans) (transQty trans) of
+stockUpdate stocks trans = 
+    let (validStocks, validStock) = newStockHandler stocks (transItem trans)
+    in case stockQtyUpdate validStock (transDirection trans) (transQty trans) of
         Nothing -> Nothing -- Insufficient stock for OUT transaction
-        Just s' ->
-            let (updatedStocks, _) = stockShelfUpdate stocks s' (transShelfID trans)
+        Just updatedStock ->
+            let (updatedStocks, _) = stockShelfUpdate validStocks updatedStock (transShelfID trans)
             in Just updatedStocks
 
 -- new Transaction rule: validate values (stock exist, date, time), updates stock qty based on transaction direction and add shelf id if not yet in, invalid if insufficient stock on OUT transaction
