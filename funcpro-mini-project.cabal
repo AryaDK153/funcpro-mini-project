@@ -21,6 +21,7 @@ executable funcpro-mini-project
   other-modules:       CustomData.FileNames
                        CustomData.Types
                        CustomData.Updates
+                       IO.CLUI
                        IO.CSVHandler
                        Tests.CSVHandlerTest
                        Tests.CustomDataTest

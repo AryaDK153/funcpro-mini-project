@@ -7,11 +7,11 @@ import CustomData.Types
 import CustomData.Updates
 import Data.Time
 import IO.CSVHandler
-import Tests.CSVHandlerTest (loadTestCSVs)
+import IO.CLUI (load)
 
 testUpdate :: IO ()
 testUpdate = do
-  (itemListLoaded, stockListLoaded, transListLoaded) <- loadTestCSVs
+  (itemListLoaded, stockListLoaded, transListLoaded) <- load
   -- Custom Data Updates Test
   let (updatedItems, newItem) = newItemHandler itemListLoaded "Soursop"
   putStrLn $ "Added/Found Item: " ++ show newItem
