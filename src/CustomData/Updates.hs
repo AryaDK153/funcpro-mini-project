@@ -65,10 +65,10 @@ stockUpdate stocks trans =
 -- new Transaction rule: validate values (stock exist, date, time), updates stock qty based on transaction direction and add shelf id if not yet in, invalid if insufficient stock on OUT transaction
 newTransHandler ::
   ([Item], [Stock], [Transaction]) ->
-  (Item, Int, TransDirection, (Int, Int, Int), (Int, Int, Int), [String]) ->
+  (String, Int, TransDirection, (Int, Int, Int), (Int, Int, Int), [String]) ->
   Maybe ([Item], [Stock], [Transaction])
-newTransHandler (existingItems, existingStocks, existingTrans) (item, qty, direction, (dd, mm, yyyy), (hh, mn, ss), shelfIDs) =
-  let (validItems, validItem) = newItemHandler existingItems (itemName item)
+newTransHandler (existingItems, existingStocks, existingTrans) (itemName, qty, direction, (dd, mm, yyyy), (hh, mn, ss), shelfIDs) =
+  let (validItems, validItem) = newItemHandler existingItems itemName
       newID = if null existingTrans then 1 else maximum (map transID existingTrans) + 1
       newTrans = Transaction newID validItem qty direction dd mm yyyy hh mn ss shelfIDs
   in case stockUpdate existingStocks newTrans of

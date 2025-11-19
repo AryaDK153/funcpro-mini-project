@@ -53,7 +53,7 @@ testUpdate = do
       mn = todMin timeOfDay
       ss = floor (todSec timeOfDay)  -- truncate float seconds
 
-  let newTransInput = (Item 99 "Durian", 15, IN, (dd, mm, fromInteger yyyy), (hh, mn, ss), ["DA0303"])
+  let newTransInput = ("Durian", 15, IN, (dd, mm, fromInteger yyyy), (hh, mn, ss), ["DA0303"])
   let maybeNewTrans = newTransHandler (itemListUpdated, stockListAfter2, transListLoaded) newTransInput
   case maybeNewTrans of
     Just (finalItems, finalStocks, finalTrans) -> do
