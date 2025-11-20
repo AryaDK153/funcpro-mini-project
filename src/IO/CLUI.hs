@@ -45,7 +45,7 @@ formatDateTime dd mm yyyy hh mn ss =
     two x = if x < 10 then '0' : show x else show x
     four x = if x < 1000 then replicate (4 - length (show x)) '0' ++ show x else show x
 
--- headers
+-- headers & renderers
 itemHeader :: String
 itemHeader =
   padOrCut 4 "ID" ++ "|" ++
@@ -68,6 +68,44 @@ transHeader =
   padOrCut 19 "Date & Time" ++ "|" ++
   "Shelves\n" ++ replicate 86 '-'
 
+reportHeader :: String -> String
+reportHeader itemName =
+  "Stock Report for " ++ itemName ++ "\n" ++ replicate 37 '-' ++ "\n" ++
+  padOrCut 10 "In Stock" ++ "|" ++
+  padOrCut 10 "Total In" ++ "|" ++
+  padOrCut 10 "Total Out" ++ "|" ++
+  padOrCut 10 "Net Change" ++ "|" ++
+  padOrCut 19 "Last Trans" ++ "|" ++
+  "Shelves\n" ++ replicate 84 '-'
+
+renderItem :: Item -> String
+renderItem (Item id name) =
+  padOrCut 4 (show id) ++ "|" ++ padOrCut 20 name
+  
+renderStock :: Stock -> String
+renderStock (Stock item qty shelves) =
+  renderItem item ++ "|" ++ padOrCut 10 (show qty) ++ "|" ++ padOrCut 20 (intercalate "," shelves)
+
+renderTransaction :: Transaction -> String
+renderTransaction (Transaction tid item qty dir dd mm yyyy hh mn ss shelves) =
+  padOrCut 4 (show tid) ++ "|" ++
+  renderItem item ++ "|" ++
+  padOrCut 10 (show qty) ++ "|" ++
+  padOrCut 3 (show dir) ++ "|" ++
+  formatDateTime dd mm yyyy hh mn ss ++ "|" ++
+  padOrCut 20 (intercalate "," shelves)
+
+renderReport :: Int -> Int -> Int -> Int -> (Int, Int, Int, Int, Int, Int) -> [String] -> String
+renderReport inStock totalIn totalOut netChange (dd, mm, yyyy, hh, mn, ss) shelves =
+  padOrCut 10 (show inStock) ++ "|" ++
+  padOrCut 10 (show totalIn) ++ "|" ++
+  padOrCut 10 (show totalOut) ++ "|" ++
+  padOrCut 10 (show netChange) ++ "|" ++
+  formatDateTime dd mm yyyy hh mn ss ++ "|" ++
+  padOrCut 20 (intercalate "," shelves)
+
+
+-- find ops
 opsInt :: [(String, Int -> Int -> Bool)]
 opsInt =
   [ ("=", (==)), ("==", (==)), ("!=", (/=)), ("/=", (/=)),
@@ -167,23 +205,6 @@ transMatch key eqOp value
       return (timeMatch op value)
   | otherwise = Nothing
 
-renderItem :: Item -> String
-renderItem (Item id name) =
-  padOrCut 4 (show id) ++ "|" ++ padOrCut 20 name
-  
-renderStock :: Stock -> String
-renderStock (Stock item qty shelves) =
-  renderItem item ++ "|" ++ padOrCut 10 (show qty) ++ "|" ++ padOrCut 20 (intercalate "," shelves)
-
-renderTransaction :: Transaction -> String
-renderTransaction (Transaction tid item qty dir dd mm yyyy hh mn ss shelves) =
-  padOrCut 4 (show tid) ++ "|" ++
-  renderItem item ++ "|" ++
-  padOrCut 10 (show qty) ++ "|" ++
-  padOrCut 3 (show dir) ++ "|" ++
-  formatDateTime dd mm yyyy hh mn ss ++ "|" ++
-  padOrCut 20 (intercalate "," shelves)
-
 
 -- commands
 printListCmd :: String -> (a -> String) -> [a] -> IO ()
@@ -199,7 +220,34 @@ findWhereCmd filterFunc (header, renderer, source) =
   in printListCmd header renderer results
 
 -- TODO: stock report cmd --- print stock and list of transactions related to that stock
--- reportCmd stockItemName stocks trans
+reportCmd :: String -> [Stock] -> [Transaction] -> IO ()
+reportCmd stockItemName stocks trans = do
+  let mStock = filter (\s -> itemName (stockItem s) == stockItemName) stocks
+
+  case mStock of
+    [] -> putStrLn "Item not found in stock."
+    (stock:_) -> do
+      let inStock = stockQty stock
+          shelves = getShelves stock
+
+      let relatedTrans =
+            filter (\t -> itemName (transItem t) == stockItemName) trans
+
+      let totalIn  = sum [transQty t | t <- relatedTrans, transDirection t == IN]
+          totalOut = sum [transQty t | t <- relatedTrans, transDirection t == OUT]
+          netChange = totalIn - totalOut
+
+      let lastTrans
+            | null relatedTrans = (0,0,0,0,0,0)
+            | otherwise =
+                let t = last relatedTrans
+                in  ( transDD t, transMM t, transYYYY t
+                    , transHH t, transMN t, transSS t )
+
+      putStrLn ""
+      putStrLn (reportHeader stockItemName)
+      putStrLn (renderReport inStock totalIn totalOut netChange lastTrans shelves)
+
 
 addTransactionCmd ::
   String -> Int -> TransDirection -> (Int, Int, Int, Int, Int, Int) -> [String] ->
@@ -235,6 +283,10 @@ inputHandler items stocks trans = do
   cmd <- getLine
 
   case words cmd of
+    ["report", itemName] -> do
+      reportCmd itemName stocks trans
+      inputHandler items stocks trans
+
     ["list", dataType] -> do
       case dataType of
         "item"  -> printListCmd itemHeader renderItem items
