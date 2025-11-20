@@ -2,7 +2,8 @@ module CustomData.Types (
     Item(..),
     TransDirection(..),
     Transaction(..),
-    Stock(..)
+    Stock(..),
+    HasShelves(..)
 ) where
 
 data Item = Item {
@@ -34,3 +35,12 @@ data Stock = Stock {
     stockQty :: Int,
     stockShelfID :: [String]
 } deriving (Show, Eq)
+
+class HasShelves a where
+  getShelves :: a -> [String]
+
+instance HasShelves Stock where
+  getShelves (Stock _ _ shelves) = shelves
+
+instance HasShelves Transaction where
+  getShelves (Transaction _ _ _ _ _ _ _ _ _ _ shelves) = shelves
