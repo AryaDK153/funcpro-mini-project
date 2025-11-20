@@ -6,205 +6,11 @@ module IO.CLUI (
 ) where
 
 import CustomData.FileNames
+import CustomData.Formats
+import CustomData.Matchings
 import CustomData.Types
 import CustomData.Updates
-import Data.List (intercalate)
-import Data.Time
 import IO.CSVHandler
-
--- helpers
-padOrCut :: Int -> String -> String
-padOrCut n str
-  | length str > n = take (n - 3) str ++ "..."
-  | otherwise      = str ++ replicate (n - length str) ' '
-
-wordsWhen :: (Char -> Bool) -> String -> [String]
-wordsWhen p s =
-  case dropWhile p s of
-    "" -> []
-    s' -> w : wordsWhen p s''
-      where (w, s'') = break p s'
-
-timeNow :: IO (Int, Int, Int, Int, Int, Int)
-timeNow = do
-  currentTime <- getCurrentTime
-  timezone <- getCurrentTimeZone
-  let localTime = utcToLocalTime timezone currentTime
-      (yyyy, mm, dd) = toGregorian $ localDay localTime
-      timeOfDay = localTimeOfDay localTime
-      hh = todHour timeOfDay
-      mn = todMin timeOfDay
-      ss = floor (todSec timeOfDay)
-  return (dd, mm, fromInteger yyyy, hh, mn, ss)
-
-formatDateTime :: Int -> Int -> Int -> Int -> Int -> Int -> String
-formatDateTime dd mm yyyy hh mn ss =
-  two dd ++ "-" ++ two mm ++ "-" ++ four yyyy ++ " "
-  ++ two hh ++ ":" ++ two mn ++ ":" ++ two ss
-  where
-    two x = if x < 10 then '0' : show x else show x
-    four x = if x < 1000 then replicate (4 - length (show x)) '0' ++ show x else show x
-
--- headers & renderers
-itemHeader :: String
-itemHeader =
-  padOrCut 4 "ID" ++ "|" ++
-  "Item Name\n" ++ replicate 25 '-'
-
-stockHeader :: String
-stockHeader = 
-  padOrCut 4 "ID" ++ "|" ++
-  padOrCut 20 "Item Name" ++ "|" ++
-  padOrCut 10 "Qty" ++ "|" ++
-  "Shelves\n" ++ replicate 57 '-'
-
-transHeader :: String
-transHeader =
-  padOrCut 4 "TID" ++ "|" ++
-  padOrCut 4 "IID" ++ "|" ++
-  padOrCut 20 "Item Name" ++ "|" ++
-  padOrCut 10 "Qty" ++ "|" ++
-  "Dir|" ++
-  padOrCut 19 "Date & Time" ++ "|" ++
-  "Shelves\n" ++ replicate 86 '-'
-
-reportHeader :: String -> String
-reportHeader itemName =
-  "Stock Report for " ++ itemName ++ "\n" ++ replicate 37 '-' ++ "\n" ++
-  padOrCut 10 "In Stock" ++ "|" ++
-  padOrCut 10 "Total In" ++ "|" ++
-  padOrCut 10 "Total Out" ++ "|" ++
-  padOrCut 10 "Net Change" ++ "|" ++
-  padOrCut 19 "Last Trans" ++ "|" ++
-  "Shelves\n" ++ replicate 84 '-'
-
-renderItem :: Item -> String
-renderItem (Item id name) =
-  padOrCut 4 (show id) ++ "|" ++ padOrCut 20 name
-  
-renderStock :: Stock -> String
-renderStock (Stock item qty shelves) =
-  renderItem item ++ "|" ++ padOrCut 10 (show qty) ++ "|" ++ padOrCut 20 (intercalate "," shelves)
-
-renderTransaction :: Transaction -> String
-renderTransaction (Transaction tid item qty dir dd mm yyyy hh mn ss shelves) =
-  padOrCut 4 (show tid) ++ "|" ++
-  renderItem item ++ "|" ++
-  padOrCut 10 (show qty) ++ "|" ++
-  padOrCut 3 (show dir) ++ "|" ++
-  formatDateTime dd mm yyyy hh mn ss ++ "|" ++
-  padOrCut 20 (intercalate "," shelves)
-
-renderReport :: Int -> Int -> Int -> Int -> (Int, Int, Int, Int, Int, Int) -> [String] -> String
-renderReport inStock totalIn totalOut netChange (dd, mm, yyyy, hh, mn, ss) shelves =
-  padOrCut 10 (show inStock) ++ "|" ++
-  padOrCut 10 (show totalIn) ++ "|" ++
-  padOrCut 10 (show totalOut) ++ "|" ++
-  padOrCut 10 (show netChange) ++ "|" ++
-  formatDateTime dd mm yyyy hh mn ss ++ "|" ++
-  padOrCut 20 (intercalate "," shelves)
-
-
--- find ops
-opsInt :: [(String, Int -> Int -> Bool)]
-opsInt =
-  [ ("=", (==)), ("==", (==)), ("!=", (/=)), ("/=", (/=)),
-    ("<", (<)), (">", (>)), ("<=", (<=)), (">=", (>=)) ]
-
-opsStr :: [(String, String -> String -> Bool)]
-opsStr =
-  [ ("=", (==)), ("==", (==)), ("!=", (/=)), ("/=", (/=)) ]
-
-matchOpInt :: String -> Maybe (Int -> Int -> Bool)
-matchOpInt = flip lookup opsInt
-
-matchOpStr :: String -> Maybe (String -> String -> Bool)
-matchOpStr = flip lookup opsStr
-
--- DD-MM-YYYY
-dateMatch :: (Int -> Int -> Bool) -> String -> (Transaction -> Bool)
-dateMatch op value =
-  case wordsWhen (=='-') value of
-    [ddStr, mmStr, yyyyStr] ->
-      let dd' = read ddStr :: Int
-          mm' = read mmStr :: Int
-          yyyy' = read yyyyStr :: Int
-      in \t ->
-          let dateInt  (y, m, d) = y * 10000 + m * 100 + d
-              (syyyy, smm, sdd) = (transYYYY t, transMM t, transDD t)
-          in op (dateInt (syyyy, smm, sdd)) (dateInt (yyyy', mm', dd'))
-    _ -> const False
-
--- HH:MM:SS
-timeMatch :: (Int -> Int -> Bool) -> String -> (Transaction -> Bool)
-timeMatch op value =
-  case wordsWhen (==':') value of
-    [hhStr, mnStr, ssStr] ->
-      let hh' = read hhStr :: Int
-          mn' = read mnStr :: Int
-          ss' = read ssStr :: Int
-      in \t ->
-          let timeInt (hh, mn, ss) = hh * 10000 + mn * 100 + ss
-              (thh, tmn, tss) = (transHH t, transMN t, transSS t)
-          in op (timeInt (thh, tmn, tss)) (timeInt (hh', mn', ss'))
-    _ -> const False
-
--- [String]
-shelfMatch :: HasShelves a => (String -> String -> Bool) -> String -> (a -> Bool)
-shelfMatch op value = (\x -> any (\s -> op s value) (getShelves x))
-
-itemMatch :: String -> String -> String -> Maybe (Item -> Bool)
-itemMatch key eqOp value =
-  case key of
-    "id"   -> do
-        op <- matchOpInt eqOp
-        let vid = read value :: Int
-        return (\item -> op (itemID item) vid)
-
-    "name" -> do
-        op <- matchOpStr eqOp
-        return (\item -> op (itemName item) value)
-
-    _ -> Nothing
-
-stockMatch :: String -> String -> String -> Maybe (Stock -> Bool)
-stockMatch key eqOp value
-  | key `elem` ["id", "qty"] = do
-      op <- matchOpInt eqOp
-      let vInt = read value :: Int
-      case key of
-        "id"  -> Just (\stock -> op (itemID (stockItem stock)) vInt)
-        "qty" -> Just (\stock -> op (stockQty stock) vInt)
-  | key `elem` ["name", "shelves"] = do
-      op <- matchOpStr eqOp
-      case key of
-        "name"    -> Just (\stock -> op (itemName (stockItem stock)) value)
-        "shelves" -> Just (shelfMatch op value)
-  | otherwise = Nothing
-
-transMatch :: String -> String -> String -> Maybe (Transaction -> Bool)
-transMatch key eqOp value
-  | key `elem` ["tid", "iid", "qty"] = do
-      op <- matchOpInt eqOp
-      let vInt = read value :: Int
-      case key of
-        "tid"       -> Just (\trans -> op (transID trans) vInt)
-        "iid"       -> Just (\trans -> op (itemID (transItem trans)) vInt)
-        "qty"       -> Just (\trans -> op (transQty trans) vInt)
-  | key `elem` ["name", "dir", "shelves"] = do
-      op <- matchOpStr eqOp
-      case key of
-        "name"      -> Just (\trans -> op (itemName (transItem trans)) value)
-        "dir"       -> Just (\trans -> op (show (transDirection trans)) value)
-        "shelves"   -> Just (shelfMatch op value)
-  | key == "date" = do
-      op <- matchOpInt eqOp
-      return (dateMatch op value)
-  | key == "time" = do
-      op <- matchOpInt eqOp
-      return (timeMatch op value)
-  | otherwise = Nothing
-
 
 -- commands
 printListCmd :: String -> (a -> String) -> [a] -> IO ()
@@ -214,7 +20,7 @@ printListCmd header render xs = do
   mapM_ (putStrLn . render) xs
 
 -- TODO: get by condition cmd --- filter xs (list of items/stocks/transactions) based on criteria (key eqOp value)
-findWhereCmd :: (Show a) => (a -> Bool) -> (String, (a -> String), [a]) -> IO ()
+findWhereCmd :: (a -> Bool) -> (String, (a -> String), [a]) -> IO ()
 findWhereCmd filterFunc (header, renderer, source) =
   let results = filter filterFunc source
   in printListCmd header renderer results
@@ -222,7 +28,7 @@ findWhereCmd filterFunc (header, renderer, source) =
 -- TODO: stock report cmd --- print stock and list of transactions related to that stock
 reportCmd :: String -> [Stock] -> [Transaction] -> IO ()
 reportCmd stockItemName stocks trans = do
-  let mStock = filter (\s -> itemName (stockItem s) == stockItemName) stocks
+  let mStock = filter (\s -> strLower (itemName (stockItem s)) == strLower stockItemName) stocks
 
   case mStock of
     [] -> putStrLn "Item not found in stock."
@@ -231,7 +37,7 @@ reportCmd stockItemName stocks trans = do
           shelves = getShelves stock
 
       let relatedTrans =
-            filter (\t -> itemName (transItem t) == stockItemName) trans
+            filter (\t -> strLower (itemName (transItem t)) == strLower stockItemName) trans
 
       let totalIn  = sum [transQty t | t <- relatedTrans, transDirection t == IN]
           totalOut = sum [transQty t | t <- relatedTrans, transDirection t == OUT]
@@ -247,7 +53,6 @@ reportCmd stockItemName stocks trans = do
       putStrLn ""
       putStrLn (reportHeader stockItemName)
       putStrLn (renderReport inStock totalIn totalOut netChange lastTrans shelves)
-
 
 addTransactionCmd ::
   String -> Int -> TransDirection -> (Int, Int, Int, Int, Int, Int) -> [String] ->
@@ -283,8 +88,8 @@ inputHandler items stocks trans = do
   cmd <- getLine
 
   case words cmd of
-    ["report", itemName] -> do
-      reportCmd itemName stocks trans
+    ["report", targetItemName] -> do
+      reportCmd targetItemName stocks trans
       inputHandler items stocks trans
 
     ["list", dataType] -> do
@@ -312,12 +117,12 @@ inputHandler items stocks trans = do
         _       -> putStrLn "Unknown data type."
       inputHandler items stocks trans
 
-    ["transact", itemName, qtyStr, dirStr, shelfIDsStr] -> do
+    ["transact", targetItemName, qtyStr, dirStr, shelfIDsStr] -> do
       let qty = read qtyStr :: Int
           dir = if dirStr == "IN" then IN else OUT
           shelfIDs = wordsWhen (==',') shelfIDsStr
       (dd, mm, yyyy, hh, mn, ss) <- timeNow
-      case addTransactionCmd itemName qty dir (dd, mm, yyyy, hh, mn, ss) shelfIDs items stocks trans of
+      case addTransactionCmd targetItemName qty dir (dd, mm, yyyy, hh, mn, ss) shelfIDs items stocks trans of
         Just (newItems, newStocks, newTrans) -> do
           putStrLn "Transaction successful."
           inputHandler newItems newStocks newTrans

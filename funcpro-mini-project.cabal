@@ -19,6 +19,8 @@ executable funcpro-mini-project
   hs-source-dirs:      src
   main-is:             Main.hs
   other-modules:       CustomData.FileNames
+                       CustomData.Formats
+                       CustomData.Matchings
                        CustomData.Types
                        CustomData.Updates
                        IO.CLUI
