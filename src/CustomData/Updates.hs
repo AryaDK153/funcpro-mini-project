@@ -1,6 +1,8 @@
 module CustomData.Updates (
     newItemHandler,
     newStockHandler,
+    stockQtyUpdate,
+    stockShelfUpdate,
     stockUpdate,
     newTransHandler
 ) where

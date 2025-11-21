@@ -79,8 +79,8 @@ transHeader =
   "Shelves\n" ++ replicate 86 '-'
 
 reportHeader :: String -> String
-reportHeader itemName =
-  "Stock Report for " ++ itemName ++ "\n" ++ replicate 37 '-' ++ "\n" ++
+reportHeader targetStockItemName =
+  "Stock Report for " ++ targetStockItemName ++ "\n" ++ replicate 37 '-' ++ "\n" ++
   padOrCut 10 "In Stock" ++ "|" ++
   padOrCut 10 "Total In" ++ "|" ++
   padOrCut 10 "Total Out" ++ "|" ++
@@ -89,8 +89,8 @@ reportHeader itemName =
   "Shelves\n" ++ replicate 84 '-'
 
 renderItem :: Item -> String
-renderItem (Item id name) =
-  padOrCut 4 (show id) ++ "|" ++ padOrCut 20 name
+renderItem (Item iid name) =
+  padOrCut 4 (show iid) ++ "|" ++ padOrCut 20 name
   
 renderStock :: Stock -> String
 renderStock (Stock item qty shelves) =

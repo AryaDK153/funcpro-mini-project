@@ -130,6 +130,33 @@ inputHandler items stocks trans = do
           putStrLn "Transaction failed (invalid operation)."
           inputHandler items stocks trans
 
+    ["help"] -> do
+      putStrLn "Available commands:"
+      putStrLn "  help"
+      putStrLn "    Show this help menu."
+      putStrLn ""
+      putStrLn "  list <item|stock|trans>"
+      putStrLn "    List all entries of the chosen data type."
+      putStrLn ""
+      putStrLn "  find <item|stock|trans> where <key> <op> <value>"
+      putStrLn "    Filter entries by field using operators (= != < > <= >=)."
+      putStrLn "    Examples:"
+      putStrLn "      find stock where qty > 10"
+      putStrLn "      find item where name = Apple"
+      putStrLn ""
+      putStrLn "  report <ItemName>"
+      putStrLn "    Show stock/transaction summary for an item."
+      putStrLn ""
+      putStrLn "  transact <ItemName> <Qty> <IN|OUT> <Shelves>"
+      putStrLn "    Add a transaction and update stock."
+      putStrLn "    Example:"
+      putStrLn "      transact Apple 5 IN A1,A2"
+      putStrLn ""
+      putStrLn "  quit"
+      putStrLn "    Save all data and exit."
+      putStrLn ""
+      inputHandler items stocks trans
+
     ["quit"] -> do
       putStrLn "Saving..."
       save items stocks trans

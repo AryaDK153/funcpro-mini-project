@@ -76,11 +76,13 @@ stockMatch key eqOp value
       case key of
         "id"  -> Just (\stock -> op (itemID (stockItem stock)) vInt)
         "qty" -> Just (\stock -> op (stockQty stock) vInt)
+        _     -> Nothing
   | key `elem` ["name", "shelves"] = do
       op <- matchOpStr eqOp
       case key of
         "name"    -> Just (\stock -> op (itemName (stockItem stock)) value)
         "shelves" -> Just (shelfMatch op value)
+        _     -> Nothing
   | otherwise = Nothing
 
 transMatch :: String -> String -> String -> Maybe (Transaction -> Bool)
@@ -92,12 +94,14 @@ transMatch key eqOp value
         "tid"       -> Just (\trans -> op (transID trans) vInt)
         "iid"       -> Just (\trans -> op (itemID (transItem trans)) vInt)
         "qty"       -> Just (\trans -> op (transQty trans) vInt)
+        _     -> Nothing
   | key `elem` ["name", "dir", "shelves"] = do
       op <- matchOpStr eqOp
       case key of
         "name"      -> Just (\trans -> op (itemName (transItem trans)) value)
         "dir"       -> Just (\trans -> op (show (transDirection trans)) value)
         "shelves"   -> Just (shelfMatch op value)
+        _     -> Nothing
   | key == "date" = do
       op <- matchOpInt eqOp
       return (dateMatch op value)
