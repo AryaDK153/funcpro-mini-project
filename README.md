@@ -7,7 +7,7 @@ To run the program using Stack environment:
 
 ## Documentations
 
-[CustomData](src\CustomData\Doc.md), in alphabetical order, contain:
+[CustomData](src/CustomData/Doc.md), in alphabetical order, contain:
 
 * FileNames
 * Formats
@@ -15,7 +15,7 @@ To run the program using Stack environment:
 * Types
 * Updates
 
-[IO](src\IO\Doc.md), in alphabetical order, contain:
+[IO](src/IO/Doc.md), in alphabetical order, contain:
 
 * CLUI (Command Line User Interface)
 * CSVHandler
