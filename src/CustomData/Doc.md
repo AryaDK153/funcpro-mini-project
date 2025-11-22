@@ -152,5 +152,5 @@ Using previous functions, set creation rules and steps:
     * `Nothing` → `return Nothing` again as error throw. Codes designed to handle errors outside the module.
     * `Otherwise` → `return updatedLists`
         > updatedLists = (validItems, updatedStocks, updatedTransactions)
-
+        >
         > updatedTransactions = append new transaction to original transaction list.
