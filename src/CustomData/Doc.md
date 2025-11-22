@@ -32,7 +32,7 @@ Common function, `separate string` into smaller words (can be single char) separ
 
 ### IV. timeNow
 
-Utillizes Data.Time to get `current local time` and return them in the format of `separated Int`
+Utilizes Data.Time to get `current local time` and return them in the format of `separated Int`
 > (dd, mm, yyyy, hh, mn, ss)
 
 ### V. formatDateTime dd mm yyyy hh mn ss
@@ -112,7 +112,7 @@ Functions to control creations and updates with set rules.
 
 ### III. stockQtyUpdate targetStock \<TransDirection\> movingQty
 
-Versions based on TransDirection (`IN | OUT`), either `add or substract` from stock with an exception:
+Versions based on TransDirection (`IN | OUT`), either `add or subtract` from stock with an exception:
 
 * If TransDirection is `OUT` and `stockQty < movingQty`, then `return Nothing` as a form of error throw. Codes designed to handle errors outside the module.
 
