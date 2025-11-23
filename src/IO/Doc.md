@@ -101,35 +101,35 @@ Helper function: String → List
 Helper function: List → String  
 `Join elements (String) in a list by semicolon (';')`
 
-### IV. readCSV path
-
-IO Action: File → String  
-`Reads a CSV file` located at `./<path>.csv` and returns its entire contents as a `single raw String` (no parsing, no splitting — just plain text loaded from disk).
-
-### V. parse lineParser contentFromCSV
-
-A high-order function that utilizes a given `<xtype>LineParser` to `convert raw CSV text (String)` into a list of typed values.  
-It applies the parser to each line (skipping the header), keeping only the valid results, producing a `list of <xtype>`.
-
-### VI. \<xtype\>LineParser lineOfContentFromCSV
-
-Utilizes `splitCSV` to extract the `list of values` expected by the `<xtype> constructor`. Then, builds and `returns an instance` created from said values, or `Nothing` if the line fails to match the required structure.
-
-### VII. parse\<xtype\>CSV contentFromCSV
-
-Convenience functions that call the generic `parse` function tailored to using the corresponding `<xtype>LineParser`, producing a fully parsed `list of <xtype>` values.
-
-### VIII. \<xtype\>Composer \<xtype\>
+### IV. \<xtype\>Composer \<xtype\>
 
 A function that `combines (join) the fields of an <xtype>` into a single CSV-formatted `String`. Producing the line that will be written into its corresponding CSV database.
 
-### IX. writeCSV composer path header contentToWrite
+### V. writeCSV composer path header contentToWrite
 
 IO Action: String → File  
 A generic function that utilizes the given `<xtype>Composer` and `<xtype>Header format` to process `unlined CSV-formatted content (String)` and write it into a file located at `./<path>.csv`.
 
 It constructs the full CSV output (header + composed lines) and writes it `directly to disk`.
 
-### X. write\<xtype\>CSV contentToWrite
+### VI. write\<xtype\>CSV contentToWrite
 
 Convenience functions that call the generic `writeCSV` function tailored to using the corresponding `<xtype>Composer` and directed to the corresponding `<xtype>DB path`, producing the final CSV output and writing it to the correct database file.
+
+### VII. readCSV path
+
+IO Action: File → String  
+`Reads a CSV file` located at `./<path>.csv` and returns its entire contents as a `single raw String` (no parsing, no splitting — just plain text loaded from disk).
+
+### VIII. parse lineParser contentFromCSV
+
+A high-order function that utilizes a given `<xtype>LineParser` to `convert raw CSV text (String)` into a list of typed values.  
+It applies the parser to each line (skipping the header), keeping only the valid results, producing a `list of <xtype>`.
+
+### IX. \<xtype\>LineParser lineOfContentFromCSV
+
+Utilizes `splitCSV` to extract the `list of values` expected by the `<xtype> constructor`. Then, builds and `returns an instance` created from said values, or `Nothing` if the line fails to match the required structure.
+
+### X. parse\<xtype\>CSV contentFromCSV
+
+Convenience functions that call the generic `parse` function tailored to using the corresponding `<xtype>LineParser`, producing a fully parsed `list of <xtype>` values.
