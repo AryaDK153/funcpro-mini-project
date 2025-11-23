@@ -38,9 +38,22 @@ After:
 
 Commands supported in current version:
 
-* help → displays menu
-* list \<item \| stock \| trans\> → prints entire list
+* help → displays available commands  
+    <img height="400" alt="image" src="https://github.com/user-attachments/assets/b9c77cc5-7506-4301-8897-7a577f0c7e29" />
+  
+* list \<item \| stock \| trans\> → prints entire list  
+    <img height="200" alt="image" src="https://github.com/user-attachments/assets/cb494a3a-2b5f-454f-9e51-72f699ac87e7" />
+
+* transact \<ItemName\> \<Qty\> \<IN \| OUT\> \<Shelves\> → adds transaction with auto record current date and time  
+    <img width="650" height="423" alt="image" src="https://github.com/user-attachments/assets/7ce7e655-a210-42cb-803e-e112cce68ece" />
+
+    on next transactions:  
+    <img width="650" height="319" alt="image" src="https://github.com/user-attachments/assets/9e93de9a-3bd3-47b2-8fed-9d9f2960fbb9" />
+    
 * find \<dataType\> where \<key\> \<op\> \<value\> → print filtered list of \<dataType\>
-* report \<ItemName\> → prints stock report
-* transact \<ItemName\> \<Qty\> \<IN \| OUT\> \<Shelves\> → adds transaction with auto record current date and time
-* quit → saves all data and exits
+    <img width="650" height="375" alt="image" src="https://github.com/user-attachments/assets/72822464-f7d3-4edb-9445-a589b45d4196" />
+
+* report \<ItemName\> → prints stock report  
+    <img width="650" height="171" alt="image" src="https://github.com/user-attachments/assets/e2351446-fcb8-4df9-b895-1f1f4aae4ab0" />
+
+* quit → saves all data in CSV files and exits - You can open the CSV files in any text editor, like Notepad.
