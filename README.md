@@ -5,6 +5,8 @@ To run by .exe, download latest release.
 To run the program using Stack environment:
 > stack run
 
+More on first run guide, click here: [Jump to first run guide section](#first-run-guide).
+
 ## Documentations
 
 [CustomData](src/CustomData/Doc.md), in alphabetical order, contain:
@@ -19,6 +21,82 @@ To run the program using Stack environment:
 
 * CLUI (Command Line User Interface)
 * CSVHandler
+
+## Functional Programming Concepts
+
+This section talks about important concepts, parts of the *Functional Programming Paradigm*. Listed are the few concepts studied and implemented during the project development.
+
+### Datatype vs Object
+
+In functional programming — *especially in the Haskell language* — data representation is approached using **Algebraic Data Type (ADT)**, which includes `data`, `newtype`, and lastly, `type`. Below are ADT characteristics:
+
+1. **Immutable data representation**. There are no hidden states, meaning, a value is permanent and will never change post-initiation.
+    > data Stock = Stock { stockItem :: Item, stockQty :: Int }  
+    >
+    > -- case pencil as Item  
+    > let stock = Stock pencil 10  
+    > let updated = stock { stockQty = 20 }  
+    >
+    > -- stock = Stock { stockItem :: pencil, stockQty :: 10 }  
+    > -- updated = Stock { stockItem :: pencil, stockQty :: 20 }
+
+    The value saved inside the "stock" variable is permanent. **Changes to the stockQty from 10 to 20 became an entirely new and different data** that's then saved inside the "updated" variable. This helps keeping individual data away from unwanted operations.
+2. **ADTs are pure structures**, unlike objects in OOP which carries methods and behaviors. Said structure can be passed on as arguments, operated, or even become part of other structures without complications.
+
+    This makes data in theory lighter, more modular, easier for pattern matching, and easier to test. However take note, as it makes multiple separate functions a necessity in order to do internal operations.
+
+### Higher-Order Function (HOF), Composition, Layered Abstraction
+
+These three concepts are closely related as functional paradigm, and often used alongside one-another.
+
+1. HOF
+
+    A type of function that's able to take other functions as parameters/arguments and/or return other functions. Some good examples in the Haskell language are `map`, `filter`, `foldr`, etc.
+    > Not limited to language-provided function library, HOF can also be made custom.
+
+    HOF may have the characteristics below:
+    1. **Recursive functions** replacing loops like for and while.
+
+        Example:  
+        “foldr” (fold from right to left). Works by operating on the last 2 elements of a given list and recursively operate on the rest of the list.
+    2. **Pattern generalization**. HOFs should be defined in common patterns to be used in many different situations.
+        Example: “filter condition xs”  
+        "filter" is a HOF in itself, but "filter _ xs" is considered a common pattern.  
+        "condition" on the other hand is a flexible argument, which in this case, any function that creates boolean to be used in filtering.
+2. Composition
+
+    In math, there is a concept of passing the result of a function straight to the next function as input. This type of continuous and sequential operation is called a composition and can be written as the formula below:  
+    `f (g (h (x))) = (f o g o h) (x)`  
+    This technique can be used in the Haskell language. Not only does it significantly lowers the need for extra temporary variables, it also makes reading the code and understanding the flow easier. In Haskell, it is written like the code below:  
+    `f . g . h x`  
+    This writing style also helps with applying tacit programming or also known as point-free style, which is convenient for passing multiple functions, especially for functions with multi-layered operations.  
+    > comp `x` = f . g . h `x`  
+    > ↓  
+    > `comp = f . g . h`
+3. Layered Abstraction
+
+    A useful technique when a function have multi-layered operations, in other words, does so many things and sequentially most of the times. Each of those operations can be made into each helper functions in order to improve  the code quality, readability, and reusability.
+
+    Example: A function that does output formatting followed by printing the formatted result to I/O, but also require those steps to be operated sequentially on every elements of a given list.
+
+    Such program have three different processes (layers): Format, Print, and Loop, which can be made into each of their own abstract helper functions.
+
+Combining the three techniques above, we can have functions like the one below:
+> printList :: (a -> String) -> [a] -> IO ()  
+> `printList rowFormatter = mapM_ (putStrLn . rowFormatter)`
+
+From the function above we can find:
+
+1. Three abstract functions:
+    * `mapM_` that functions as a loop (recursive) for operating on every elements of a given list,
+    * `putStrLn` that prints to I/O, and
+    * `rowFormatter` that formats every element 'a' into printable String.
+2. Two HOFs:
+    * `mapM_` that accepts an operator function as the first parameter,
+    * `printList` that accepts the formatter function and returns another function that operates on a list.
+3. Composition of two functions, which operates in sequence:
+    * Apply `rowFormatter` to x (an element of xs),
+    * Apply `putStrLn` to the output of rowFormatter.
 
 ## First-Run Guide
 
