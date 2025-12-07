@@ -28,9 +28,9 @@ This section talks about important concepts, parts of the *Functional Programmin
 
 ### Datatype vs Object
 
-In functional programming — *especially in the Haskell language* — data representation is approached using **Algebraic Data Type (ADT)**, which includes `data`, `newtype`, and lastly, `type`. Below are ADT characteristics:
+In functional programming — *especially in the Haskell language* — data representation is approached using **Algebraic Data Type (ADT)**, which includes `data`, `newtype`, and lastly, `type`. Below are some rules applied to variables that uses ADT, *specifically in the Haskell Language*:
 
-1. **Immutable data representation**. There are no hidden states, meaning, a value is permanent and will never change post-initiation.
+1. An ADT itself only describes the structure of the data. It is not inherently mutable or immutable. However, **because Haskell is a purely functional language, all values are immutable by default**. Therefore, any value constructed from an ADT also becomes immutable once created.
     > data Stock = Stock { stockItem :: Item, stockQty :: Int }  
     >
     > -- case pencil as Item  
@@ -41,9 +41,13 @@ In functional programming — *especially in the Haskell language* — data repr
     > -- updated = Stock { stockItem :: pencil, stockQty :: 20 }
 
     The value saved inside the "stock" variable is permanent. **Changes to the stockQty from 10 to 20 became an entirely new and different data** that's then saved inside the "updated" variable. This helps keeping individual data away from unwanted operations.
-2. **ADTs are pure structures**, unlike objects in OOP which carries methods and behaviors. Said structure can be passed on as arguments, operated, or even become part of other structures without complications.
+2. Unlike objects in OOP, which usually bundle data and behavior (methods) into a single entity, **ADTs in Haskell only define structure**. All operations over that data are placed in **separate functions or expressed using typeclasses**.
 
-    This makes data in theory lighter, more modular, easier for pattern matching, and easier to test. However take note, as it makes multiple separate functions a necessity in order to do internal operations.
+    This separation makes data:
+    * More modular
+    * Easier to reason about
+    * Easier to pattern match
+    * Easier to test and maintain
 
 ### Higher-Order Function (HOF), Composition, Layered Abstraction
 
@@ -58,11 +62,18 @@ These three concepts are closely related as functional paradigm, and often used 
     1. **Recursive functions** replacing loops like for and while.
 
         Example:  
-        “foldr” (fold from right to left). Works by operating on the last 2 elements of a given list and recursively operate on the rest of the list.
+        “foldr” (fold from right to left). Works by operating on the last element of a given list with an initial value and recursively operate on the rest of the list with the result from previous operations.
     2. **Pattern generalization**. HOFs should be defined in common patterns to be used in many different situations.
-        Example: “filter condition xs”  
-        "filter" is a HOF in itself, but "filter _ xs" is considered a common pattern.  
-        "condition" on the other hand is a flexible argument, which in this case, any function that creates boolean to be used in filtering.
+        Example:  
+
+        ```filter :: (a -> Bool) -> [a] -> [a]
+        filter _ [] = []
+        filter p (x:xs)
+          | p x       = x : filter p xs
+          | otherwise = filter p xs
+        ```
+
+        Applying condition "p" to every element of x recursively is considered a common pattern.  "p" on the other hand is a flexible argument, which in this case, any function that creates boolean to be used in filtering.
 2. Composition
 
     In math, there is a concept of passing the result of a function straight to the next function as input. This type of continuous and sequential operation is called a composition and can be written as the formula below:  
